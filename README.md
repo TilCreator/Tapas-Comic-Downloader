@@ -11,7 +11,10 @@ To my knowledge it should be legal to use it in Germany (I can not guarantee it)
  ```
  $ sudo apt install php
  ```
-
+ * On Arch:
+ ```
+ $ sudo pacman -S php
+ ```
 2. You have to download the file "downloader.php" (I think the fastest way is copy paste)
 
 3. Set the variables:
