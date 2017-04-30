@@ -1,5 +1,5 @@
 # Tapastic-Comic-Downloader
-This is a downloader to download and update whole comics from Tapastic.com. (Not official!)
+This is a downloader to download and update whole comics from https://tapas.io/. (Not official!)
 
 ## Attention:
 **This script could be illegal in certain cases, please first read the terms of service on https://tapas.io/ !**
