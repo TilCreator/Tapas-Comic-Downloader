@@ -1,10 +1,10 @@
-#Tapastic-Comic-Downloader
+# Tapastic-Comic-Downloader
 This is a downloader to download and update whole comics from Tapastic.com. (Not official!)
 
-##Attention:
+## Attention:
 **This script could be illegal in certain cases, please first read the terms of service on https://tapas.io/ !**
 
-##Usage:
+## Usage:
 1. Installing Php (no server only Php):
  * Can be installed on Debian and Ubuntu and other Linux distribution that use 'apt' like this:
  ```
