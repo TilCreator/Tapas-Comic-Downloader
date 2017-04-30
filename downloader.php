@@ -24,15 +24,15 @@ $lastImg = 0;
 
 // Test input for erros
 if (empty($episode)) {
-    die('Error: $episode mustn\'t be empty.');
+    die('Error: $episode can\'t be empty');
 }
 
 if (empty($path)) {
-    die('Error: $path mustn\'t be empty.');
+    die('Error: $path can\'t be empty');
 }
 
 if (substr($path, -1) != '/') {
-    die('Error: $path has to end with /.');
+    die('Error: $path has to end with /');
 }
 
 if (!file_exists($path)) {
