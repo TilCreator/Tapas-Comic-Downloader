@@ -5,14 +5,18 @@ This is a downloader to download and update whole comics from https://tapas.io/.
 **This script could be illegal in certain cases, please first read the terms of service on https://tapas.io/ !**
 
 ## Usage:
-1. Installing Python3:
+1. Installing Python3 and needed modules:
  * Can be installed on Debian and Ubuntu and other Linux distribution that use 'apt' like this:
  ```
- # apt install python3
+ # apt install python3 python3-pip
  ```
- * On Arch:
+ * On Arch/Antergos:
  ```
- # pacman -S python
+ # pacman -S python python-pip
+ ```
+ * On all:
+ ```
+ # pip install pyquery argparse
  ```
 2. Get input link
  * Go to the comic you want to download (any page)
