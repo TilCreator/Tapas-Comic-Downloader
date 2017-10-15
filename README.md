@@ -17,11 +17,11 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  # pip install pyquery argparse
  ```
  + If someone got it running on another OS, please let me know!
-1. Get input link
+2. Get input link
  * Go to the comic you want to download (any page)
  * Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url.
  * Examples: `https://tapas.io/series/Erma`, `RavenWolf`, ...
-1. Start the download
+3. Start the download
  * Usage of `tapas-dl.py`:
  ```
  $ tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...]
@@ -33,6 +33,6 @@ This is a downloader to download and update whole comics from https://tapas.io/.
 ### Extra:
 If someone wants to quickly understand the code, here is the pseudo code of the pure download part:
 1. Get comic start page (Example: `https://tapas.io/series/Erma`)
-1. Extract all pageIds of the comic from the `_data` JS object from the start page
-1. Get image urls by extracting them out of `https://tapas.io/episode/view/<pageId>` (Example: `https://tapas.io/episode/view/255222`)
-1. Download the images
+2. Extract all pageIds of the comic from the `_data` JS object from the start page
+3. Get image urls by extracting them out of `https://tapas.io/episode/view/<pageId>` (Example: `https://tapas.io/episode/view/255222`)
+4. Download the images
