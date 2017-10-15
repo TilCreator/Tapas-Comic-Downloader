@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 from pyquery import PyQuery as pq
 import os, argparse, re, json, fcntl, termios, struct, requests
