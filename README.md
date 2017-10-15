@@ -27,3 +27,10 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  $ tapas-dl.py [-h] URL/name [URL/name ...]
  ```
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
+
+### Extra:
+If someone wants to quickly understand the code, here is the pseudo code of the pure download part:
+1. Get comic start page (Example: `https://tapas.io/series/Erma`)
+1. Extract all pageIds of the comic from the `_data` JS object from the start page
+1. Get image urls by extracting them out of `https://tapas.io/episode/view/<pageId>` (Example: `https://tapas.io/episode/view/255222`)
+1. Download the images
