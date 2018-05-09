@@ -52,7 +52,7 @@ for urlCount, url in enumerate(args.url):
 
     # Extract pages data and name from JS object
     page = pq(pageReqest.text)
-    dataStr = page('body > script:nth-child(23)').html().replace('\n', '') # TODO: Improve selector
+    dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
     data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
     name = dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)]
 
