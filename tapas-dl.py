@@ -1,10 +1,18 @@
 #!/usr/bin/python3
-
 from pyquery import PyQuery as pq
-import os, argparse, re, json, fcntl, termios, struct, requests
+import os
+import argparse
+import re
+import json
+import fcntl
+import termios
+import struct
+import requests
+
 
 def lead0(num, max):
     return str(num).zfill(len(str(max)))
+
 
 def terminal_size():
     try:
@@ -12,6 +20,7 @@ def terminal_size():
     except IOError:
         th, tw = 80, 200
     return tw, th
+
 
 def printLine(msg='', noNewLine=False):
     terminalWidth = terminal_size()[0]
@@ -24,6 +33,7 @@ def printLine(msg='', noNewLine=False):
             print(msg + (' ' * spaces), end='\r')
     else:
         print(msg + (' ' * spaces))
+
 
 # parse input and settup help
 parser = argparse.ArgumentParser(description='Downloads Comics from \'https://tapas.io\'.\nIf folder of downloaded comic is found, it will only update (can be disabled with -f/--force).', formatter_class=argparse.RawTextHelpFormatter)
@@ -75,7 +85,7 @@ for urlCount, url in enumerate(args.url):
         lastFile = fileNames[-1]
         lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
 
-        pageOffset = next(i for i,_ in enumerate(data) if _['id'] == lastPageId) + 1
+        pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
         data = data[pageOffset:]
     else:
         if not os.path.isdir('{} [{}]'.format(name, urlName)):
@@ -86,7 +96,7 @@ for urlCount, url in enumerate(args.url):
         printLine('Downloading header...', True)
 
         customCssStr = page('head > style').html()
-        headerSrc = re.search('url\(".+"\)', customCssStr).group(0)[5:-2]
+        headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
         with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
             f.write(requests.get(headerSrc).content)
 
@@ -114,8 +124,8 @@ for urlCount, url in enumerate(args.url):
     for pageCount, pageData in enumerate(data):
         for imgOfPageCount, img in enumerate(pageData['imgs']):
             with open(os.path.join('{} [{}]'.format(name, urlName), '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
-                                                                                                    lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                    pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
+                                                                                                        lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
+                                                                                                        pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
                 f.write(requests.get(img).content)
 
             imgCount += 1
