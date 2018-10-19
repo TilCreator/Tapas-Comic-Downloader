@@ -58,40 +58,12 @@ for urlCount, url in enumerate(args.url):
 
     # Check if folder exsists, if not create it
     printLine('Checking folder...', True)
-    if os.path.isdir('{} [{}]'.format(name, urlName)) and not args.force:
-        printLine('Found directory, only updating (use -f/--force to disable)')
+    if not os.path.isdir('{} [{}]'.format(name, urlName)):
+        os.mkdir('{} [{}]'.format(name, urlName))
+        printLine('Creating folder...', True)
 
-        filesInDir = list(os.scandir('{} [{}]'.format(name, urlName)))
-
-        fileNames = []
-        for fileInDir in filesInDir:
-            fileNames.append(fileInDir.name)
-        fileNames.sort()
-
-        imgOffset = len(fileNames)
-
-        lastFile = fileNames[-1]
-        lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
-
-        pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
-        data = data[pageOffset:]
-    else:
-        if not os.path.isdir('{} [{}]'.format(name, urlName)):
-            os.mkdir('{} [{}]'.format(name, urlName))
-            printLine('Creating folder...', True)
-
-        # Download header
-        printLine('Downloading header...', True)
-
-        customCssStr = page('head > style').html()
-        headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
-        with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
-            f.write(requests.get(headerSrc).content)
-
-        printLine('Downloaded header')
-
-        pageOffset = 0
-        imgOffset = 0
+    pageOffset = 0
+    imgOffset = 0
 
     # Get images from page from JS api
     allImgCount = 0
