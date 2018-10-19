@@ -4,8 +4,6 @@ import os
 import argparse
 import re
 import json
-import fcntl
-import termios
 import struct
 import requests
 
@@ -13,17 +11,8 @@ import requests
 def lead0(num, max):
     return str(num).zfill(len(str(max)))
 
-
-def terminal_size():
-    try:
-        th, tw, hp, wp = struct.unpack('HHHH', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0)))
-    except IOError:
-        th, tw = 80, 200
-    return tw, th
-
-
 def printLine(msg='', noNewLine=False):
-    terminalWidth = terminal_size()[0]
+    terminalWidth = 80
     spaces = terminalWidth - len(msg)
 
     if noNewLine:
@@ -33,7 +22,6 @@ def printLine(msg='', noNewLine=False):
             print(msg + (' ' * spaces), end='\r')
     else:
         print(msg + (' ' * spaces))
-
 
 # parse input and settup help
 parser = argparse.ArgumentParser(description='Downloads Comics from \'https://tapas.io\'.\nIf folder of downloaded comic is found, it will only update (can be disabled with -f/--force).', formatter_class=argparse.RawTextHelpFormatter)
