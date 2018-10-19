@@ -23,6 +23,7 @@ def printLine(msg='', noNewLine=False):
     else:
         print(msg + (' ' * spaces))
 
+
 # parse input and settup help
 parser = argparse.ArgumentParser(description='Downloads Comics from \'https://tapas.io\'.\nIf folder of downloaded comic is found, it will only update (can be disabled with -f/--force).', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
@@ -58,8 +59,11 @@ for urlCount, url in enumerate(args.url):
 
     # Check if folder exsists, if not create it
     printLine('Checking folder...', True)
-    if not os.path.isdir('{} [{}]'.format(name, urlName)):
-        os.mkdir('{} [{}]'.format(name, urlName))
+    dirname = '{} [{}]'.format(name, urlName)
+    dirname = "".join(x for x in dirname if (x.isalnum() or x in "._- []"))
+
+    if not os.path.isdir(dirname):
+        os.mkdir(dirname)
         printLine('Creating folder...', True)
 
     pageOffset = 0
@@ -83,10 +87,11 @@ for urlCount, url in enumerate(args.url):
     imgCount = 0
     for pageCount, pageData in enumerate(data):
         for imgOfPageCount, img in enumerate(pageData['imgs']):
-            with open(os.path.join('{} [{}]'.format(name, urlName), '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
-                                                                                                        lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                        pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
-                f.write(requests.get(img).content)
+            filename = '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset), lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'], pageData['id'], img[img.rindex('.') + 1:])
+            filename = "".join(x for x in filename if (x.isalnum() or x in "._- "))
+            with open(os.path.join(dirname, filename), 'wb') as f:
+                r = requests.get(img)
+                f.write(r.content)
 
             imgCount += 1
 
