@@ -82,11 +82,14 @@ for urlCount, url in enumerate(args.url):
 
         imgOffset = len(fileNames)
 
-        lastFile = fileNames[-1]
-        lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
-
-        pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
-        data = data[pageOffset:]
+        if imgOffset > 0:
+	        lastFile = fileNames[-1]
+	        lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
+	
+	        pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
+	        data = data[pageOffset:]
+        else:
+	        pageOffset = 0
     else:
         if not os.path.isdir('{} [{}]'.format(name, urlName)):
             os.mkdir('{} [{}]'.format(name, urlName))
