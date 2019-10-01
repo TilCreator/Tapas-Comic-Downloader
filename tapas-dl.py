@@ -96,11 +96,14 @@ for urlCount, url in enumerate(args.url):
         printLine('Downloading header...', True)
 
         customCssStr = page('head > style').html()
-        headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
-        with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
-            f.write(requests.get(headerSrc).content)
-
-        printLine('Downloaded header')
+        if customCssStr is not None:
+            headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
+            with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
+                f.write(requests.get(headerSrc).content)
+    
+            printLine('Downloaded header')
+        else:
+            printLine('Header not found')
 
         pageOffset = 0
         imgOffset = 0
