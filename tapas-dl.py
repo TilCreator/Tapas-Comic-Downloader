@@ -12,14 +12,7 @@ def lead0(num, max):
 
 
 def terminal_size():
-    try:
-        import fcntl
-        import termios
-        import struct
-
-        th, tw, hp, wp = struct.unpack('HHHH', fcntl.ioctl(0, termios.TIOCGWINSZ, struct.pack('HHHH', 0, 0, 0, 0)))
-    except IOError or ModuleNotFoundError:
-        th, tw = 80, 200
+    th, tw = 80, 200
     return tw, th
 
 
