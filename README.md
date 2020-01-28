@@ -9,12 +9,12 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  * Can be installed on Debian and Ubuntu and other Linux distribution that use 'apt' like this:
  ```
  # apt install python3 python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev
- # pip3 install pyquery argparse
+ # pip3 install -r requirenments.txt
  ```
  * On Arch/Antergos:
  ```
  # pacman -S python python-pip
- # pip install pyquery argparse
+ # pip install -r requirenments.txt
  ```
  + If someone got it running on another OS, please let me know!
 2. Get input link
