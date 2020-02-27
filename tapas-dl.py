@@ -83,14 +83,14 @@ for urlCount, url in enumerate(args.url):
 
         imgOffset = len(fileNames)
 
-        if imgOffset > 0:
-	        lastFile = fileNames[-1]
-	        lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
-	
-	        pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
-	        data = data[pageOffset:]
+        if imgOffset > 1:
+            lastFile = fileNames[-1]
+            lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
+
+            pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
+            data = data[pageOffset:]
         else:
-	        pageOffset = 0
+            pageOffset = 0
     else:
         if not os.path.isdir('{} [{}]'.format(name, urlName)):
             os.mkdir('{} [{}]'.format(name, urlName))
@@ -102,9 +102,15 @@ for urlCount, url in enumerate(args.url):
         customCssStr = page('head > style').html()
         if customCssStr is not None:
             headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
+        elif len(page('#series-thumb img')) > 0:
+            headerSrc = page('#series-thumb img').attr('src')
+        else:
+            headerSrc = None
+
+        if headerSrc is not None:
             with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
                 f.write(requests.get(headerSrc).content)
-    
+
             printLine('Downloaded header')
         else:
             printLine('Header not found')
@@ -112,37 +118,113 @@ for urlCount, url in enumerate(args.url):
         pageOffset = 0
         imgOffset = 0
 
-    # Get images from page from JS api
-    allImgCount = 0
-    for pageCount, pageData in enumerate(data):
-        printLine('Downloaded imageData from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
+    # Check if series is comic of novel
+    if len(page('.epub')) <= 0:
+        printLine('Detected comic')
+        # Get images from page from JS api
+        allImgCount = 0
+        for pageCount, pageData in enumerate(data):
+            printLine('Downloaded imageData from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
 
-        pageJson = requests.get('https://tapas.io/episode/view/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'}).json()
-        pageHtml = pq(pageJson['data']['html'])
+            pageJson = requests.get('https://tapas.io/episode/view/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'}).json()
+            pageHtml = pq(pageJson['data']['html'])
 
-        pageData['imgs'] = []
-        for img in pageHtml('img.art-image'):
-            pageData['imgs'].append(pq(img).attr('src'))
+            pageData['imgs'] = []
+            for img in pageHtml('img.art-image'):
+                pageData['imgs'].append(pq(img).attr('src'))
 
-            allImgCount += 1
+                allImgCount += 1
 
-    # Download images
-    imgCount = 0
-    for pageCount, pageData in enumerate(data):
-        for imgOfPageCount, img in enumerate(pageData['imgs']):
-            with open(os.path.join('{} [{}]'.format(name, urlName), '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
-                                                                                                        lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                        pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
-                f.write(requests.get(img).content)
+        # Download images
+        imgCount = 0
+        for pageCount, pageData in enumerate(data):
+            for imgOfPageCount, img in enumerate(pageData['imgs']):
+                with open(os.path.join('{} [{}]'.format(name, urlName), '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
+                                                                                                            lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
+                                                                                                            pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
+                    f.write(requests.get(img).content)
 
-            imgCount += 1
+                imgCount += 1
 
-            printLine('Downloaded image {}/{} from page {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
+                printLine('Downloaded image {}/{} from page {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
 
-    if data != []:
-        printLine('Downloaded {} images'.format(allImgCount))
+        if data != []:
+            printLine('Downloaded {} images'.format(allImgCount))
+        else:
+            printLine('Nothing to do')
+
+        if urlCount + 1 != len(args.url):
+            printLine()
     else:
-        printLine('Nothing to do')
+        printLine('Detected comic')
 
-    if urlCount + 1 != len(args.url):
-        printLine()
+        from ebooklib import epub
+
+        # download/create epub
+        book = epub.EpubBook()
+
+        customCss = None
+
+        # Add meta data
+        book.set_identifier(urlName)
+        book.set_title(page('.series-header-title').text())
+        book.set_language('en')
+
+        book.add_author(page('.name > span').text())
+
+        header_name = os.path.join(f'{name} [{urlName}]', list(filter(re.compile(r'.+header\..+').match, os.listdir(f'{name} [{urlName}]')))[0])
+        book.set_cover("cover.jpg", open(header_name, 'rb').read())
+
+        book.toc = []
+        book.spine = ['cover']
+
+        # create about page
+        chapter = epub.EpubHtml(title='about', file_name='about.xhtml')
+        chapter.content = f'<h1>About</h1><p>Title: {name}</p><p>Author: {book.metadata["http://purl.org/dc/elements/1.1/"]["creator"][0][0]}</p><p>Source: <a href="{"https://tapas.io/series/" + urlName}">{"https://tapas.io/series/" + urlName}</a></p>'
+
+        book.add_item(chapter)
+        book.spine.append(chapter)
+
+        # Append nav page
+        book.spine.append('nav')
+
+        # create chapters
+        for pageCount, pageData in enumerate(data):
+            printLine('Downloaded page {}/{}...'.format(pageCount, len(data)), True)
+
+            pagePq = pq(url='https://tapas.io/episode/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'})
+            pageTitle = pagePq('*[id*="episode-"][id*="-title"]').text()
+
+            pageHtml = f'<h1>{pageTitle}</h1>'
+            for p in pagePq('article.ep-contents > div > div > p'):
+                p = pq(p)
+                if p.text() is not None:
+                    pageHtml += '<p>' + p.text() + '</p>'
+
+            chapter = epub.EpubHtml(title=pageTitle, file_name=str(pageData['id']) + '.xhtml')
+            chapter.content = pageHtml
+
+            book.add_item(chapter)
+
+            # define Table Of Contents
+            book.toc.append(epub.Link(str(pageData['id']) + '.xhtml', pageTitle, str(pageData['id'])))
+
+            # basic spine
+            book.spine.append(chapter)
+
+        # add default NCX and Nav file
+        book.add_item(epub.EpubNcx())
+        book.add_item(epub.EpubNav())
+
+        # add CSS
+        style = ''
+        nav_css = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=style)
+        book.add_item(nav_css)
+
+        # write to the file
+        epub.write_epub(name + '.epub', book)
+
+        # remove tmp folder
+        for file in os.listdir(f'{name} [{urlName}]'):
+            os.remove(os.path.join(f'{name} [{urlName}]', file))
+        os.removedirs(f'{name} [{urlName}]')
