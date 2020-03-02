@@ -36,14 +36,25 @@ def printLine(msg='', noNewLine=False):
         print(msg + (' ' * spaces))
 
 
+def check_path(path, slash=True, fat=False):
+    evil_chars = []
+    if slash:
+        evil_chars.append('/')
+    if fat:
+        evil_chars += ['?', '<', '>', '\\', ':', '*', '|', '"', '^']
+    return ''.join([char for char in path if char not in evil_chars])
+
+
 # parse input and settup help
 parser = argparse.ArgumentParser(description='Downloads Comics from \'https://tapas.io\'.\nIf folder of downloaded comic is found, it will only update (can be disabled with -f/--force).', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
                     help='URL or URL name to comic\nGo to the comic you want to download (any page)\nRightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url\nExamples: https://tapas.io/series/Erma, RavenWolf, ...')
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
+parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \ : * | " ^\' from file names')
 
 args = parser.parse_args()
+
 
 for urlCount, url in enumerate(args.url):
     # check url/name
@@ -65,7 +76,7 @@ for urlCount, url in enumerate(args.url):
     page = pq(pageReqest.text)
     dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
     data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
-    name = dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)]
+    name = check_path(dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)], fat=args.restrict_characters)
 
     printLine('{} [{}] ({} pages):'.format(name, urlName, len(data)))
 
@@ -139,9 +150,9 @@ for urlCount, url in enumerate(args.url):
         imgCount = 0
         for pageCount, pageData in enumerate(data):
             for imgOfPageCount, img in enumerate(pageData['imgs']):
-                with open(os.path.join('{} [{}]'.format(name, urlName), '{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
+                with open(os.path.join('{} [{}]'.format(name, urlName), check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                             lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                            pageData['id'], img[img.rindex('.') + 1:])), 'wb') as f:
+                                                                                                            pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
                     f.write(requests.get(img).content)
 
                 imgCount += 1
@@ -156,7 +167,7 @@ for urlCount, url in enumerate(args.url):
         if urlCount + 1 != len(args.url):
             printLine()
     else:
-        printLine('Detected comic')
+        printLine('Detected novel')
 
         from ebooklib import epub
 
