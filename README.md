@@ -18,6 +18,21 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  # pip install -r requirenments.txt
  # pip install -r requirenments_novels.txt  # If novels are expected to be downloaded
  ```
+ * On Wndows
+   * Install python from python.org
+   * Open cmd
+   * Navigate to repo location (needs to be downloaded)
+   * Install needed modules:
+      ```
+      pip install -r requirenments.txt
+      pip install -r requirenments_novels.txt  # If novels are expected to be downloaded
+      ```
+   * Execute the script
+      ```
+      python tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...]
+      ```
+      More exact usage in the next section
+   * (thx @ [ONSKJ](https://github.com/ONSKJ) for help with Windows)
  + If someone got it running on another OS, please let me know!
 2. Get input link
  * Go to the comic you want to download (any page)
