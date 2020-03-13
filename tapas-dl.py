@@ -73,10 +73,22 @@ for urlCount, url in enumerate(args.url):
         break
 
     # Extract pages data and name from JS object
-    page = pq(pageReqest.text)
-    dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
-    data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
-    name = check_path(dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)], fat=args.restrict_characters)
+    #page = pq(pageReqest.text)
+    #dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
+    #data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
+    #name = check_path(dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)], fat=args.restrict_characters)
+
+    page_count = int(pq(pageReqest.text)('.paging .paging__button.paging__button--num.g-act')[-1].text)
+
+    name = pq(pageReqest.text)('.desc__title').text()
+
+    data = []
+    for i in range(page_count):
+        page = pq(url=f'https://tapas.io/series/{urlName}?pageNumber={i + 1}&sort_order=asc', headers={'user-agent': 'tapas-dl'})
+        for episode in page('.content a.js-episode'):
+            data.append({'id': episode.attrib['href'][episode.attrib['href'].rfind('/') + 1:]})
+
+        printLine(f'Crawling {i+1}/{page_count}...', True)
 
     printLine('{} [{}] ({} pages):'.format(name, urlName, len(data)))
 
@@ -98,7 +110,7 @@ for urlCount, url in enumerate(args.url):
             lastFile = fileNames[-1]
             lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
 
-            pageOffset = next(i for i, _ in enumerate(data) if _['id'] == lastPageId) + 1
+            pageOffset = next(i for i, page in enumerate(data) if page['id'] == lastPageId) + 1
             data = data[pageOffset:]
         else:
             pageOffset = 0
@@ -135,13 +147,14 @@ for urlCount, url in enumerate(args.url):
         # Get images from page from JS api
         allImgCount = 0
         for pageCount, pageData in enumerate(data):
-            printLine('Downloaded imageData from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
+            printLine('Downloaded image data from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
 
-            pageJson = requests.get('https://tapas.io/episode/view/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'}).json()
-            pageHtml = pq(pageJson['data']['html'])
+            pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
+
+            pageData['title'] = pageHtml('.info__title').text()
 
             pageData['imgs'] = []
-            for img in pageHtml('img.art-image'):
+            for img in pageHtml('.content__img'):
                 pageData['imgs'].append(pq(img).attr('src'))
 
                 allImgCount += 1
