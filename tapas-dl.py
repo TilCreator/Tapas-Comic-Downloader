@@ -72,21 +72,26 @@ for urlCount, url in enumerate(args.url):
         printLine('Error: Comic "{}" not found\n'.format(urlName))
         break
 
+    page = pq(pageReqest.text)
+
     # Extract pages data and name from JS object
     #page = pq(pageReqest.text)
     #dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
     #data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
     #name = check_path(dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)], fat=args.restrict_characters)
 
-    page_count = int(pq(pageReqest.text)('.paging .paging__button.paging__button--num.g-act')[-1].text)
+    try:
+        page_count = int(page('.paging .paging__button.paging__button--num.g-act')[-1].text)
+    except IndexError:
+        page_count = 1
 
-    name = pq(pageReqest.text)('.desc__title').text()
+    name = page('.desc__title').text()
 
     data = []
     for i in range(page_count):
         page = pq(url=f'https://tapas.io/series/{urlName}?pageNumber={i + 1}&sort_order=asc', headers={'user-agent': 'tapas-dl'})
         for episode in page('.content a.js-episode'):
-            data.append({'id': episode.attrib['href'][episode.attrib['href'].rfind('/') + 1:]})
+            data.append({'id': int(episode.attrib['href'][episode.attrib['href'].rfind('/') + 1:])})
 
         printLine(f'Crawling {i+1}/{page_count}...', True)
 
@@ -111,6 +116,7 @@ for urlCount, url in enumerate(args.url):
             lastPageId = int(lastFile[lastFile.rindex('#') + 1:lastFile.rindex('.')])
 
             pageOffset = next(i for i, page in enumerate(data) if page['id'] == lastPageId) + 1
+
             data = data[pageOffset:]
         else:
             pageOffset = 0
@@ -122,11 +128,8 @@ for urlCount, url in enumerate(args.url):
         # Download header
         printLine('Downloading header...', True)
 
-        customCssStr = page('head > style').html()
-        if customCssStr is not None:
-            headerSrc = re.search(r'url\(".+"\)', customCssStr).group(0)[5:-2]
-        elif len(page('#series-thumb img')) > 0:
-            headerSrc = page('#series-thumb img').attr('src')
+        if len(page('.header__thumb img')) > 0:
+            headerSrc = page('.header__thumb img').attr('src')
         else:
             headerSrc = None
 
@@ -142,7 +145,7 @@ for urlCount, url in enumerate(args.url):
         imgOffset = 0
 
     # Check if series is comic of novel
-    if len(page('.epub')) <= 0:
+    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
         printLine('Detected comic')
         # Get images from page from JS api
         allImgCount = 0
@@ -164,8 +167,8 @@ for urlCount, url in enumerate(args.url):
         for pageCount, pageData in enumerate(data):
             for imgOfPageCount, img in enumerate(pageData['imgs']):
                 with open(os.path.join('{} [{}]'.format(name, urlName), check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
-                                                                                                            lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                            pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
+                                                                                                                       lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
+                                                                                                                       pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
                     f.write(requests.get(img).content)
 
                 imgCount += 1
@@ -194,7 +197,7 @@ for urlCount, url in enumerate(args.url):
         book.set_title(page('.series-header-title').text())
         book.set_language('en')
 
-        book.add_author(page('.name > span').text())
+        book.add_author(page('.tag__author').text())
 
         header_name = os.path.join(f'{name} [{urlName}]', list(filter(re.compile(r'.+header\..+').match, os.listdir(f'{name} [{urlName}]')))[0])
         book.set_cover("cover.jpg", open(header_name, 'rb').read())
@@ -217,10 +220,10 @@ for urlCount, url in enumerate(args.url):
             printLine('Downloaded page {}/{}...'.format(pageCount, len(data)), True)
 
             pagePq = pq(url='https://tapas.io/episode/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'})
-            pageTitle = pagePq('*[id*="episode-"][id*="-title"]').text()
+            pageTitle = pagePq('.main__title').text()
 
             pageHtml = f'<h1>{pageTitle}</h1>'
-            for p in pagePq('article.ep-contents > div > div > p'):
+            for p in pagePq('article.main__body > p'):
                 p = pq(p)
                 if p.text() is not None:
                     pageHtml += '<p>' + p.text() + '</p>'
