@@ -1,9 +1,8 @@
-#!/usr/bin/python3
+#!/bin/env python3
 from pyquery import PyQuery as pq
 import os
 import argparse
 import re
-import json
 import requests
 
 
@@ -51,7 +50,7 @@ parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
                     help='URL or URL name to comic\nGo to the comic you want to download (any page)\nRightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url\nExamples: https://tapas.io/series/Erma, RavenWolf, ...')
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
-parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \ : * | " ^\' from file names')
+parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
 
 args = parser.parse_args()
 
@@ -74,12 +73,6 @@ for urlCount, url in enumerate(args.url):
 
     page = pq(pageReqest.text)
 
-    # Extract pages data and name from JS object
-    #page = pq(pageReqest.text)
-    #dataStr = [dataStr for dataStr in page('script') if dataStr.text is not None and dataStr.text.find('var _data = {') != -1][0].text.replace('\n', '')
-    #data = json.loads(dataStr[dataStr.index('episodeList : ') + 14:dataStr.index('isSeriesView :') - 9])
-    #name = check_path(dataStr[dataStr.index('seriesTitle : \'') + 15:dataStr.index('\',', dataStr.index('seriesTitle : \'') + 15)], fat=args.restrict_characters)
-
     try:
         page_count = int(page('.paging .paging__button.paging__button--num.g-act')[-1].text)
     except IndexError:
@@ -90,7 +83,7 @@ for urlCount, url in enumerate(args.url):
     data = []
     for i in range(page_count):
         page = pq(url=f'https://tapas.io/series/{urlName}?pageNumber={i + 1}&sort_order=asc', headers={'user-agent': 'tapas-dl'})
-        for episode in page('.content a.js-episode'):
+        for episode in page('.content a[href*="/episode/"]'):
             data.append({'id': int(episode.attrib['href'][episode.attrib['href'].rfind('/') + 1:])})
 
         printLine(f'Crawling {i+1}/{page_count}...', True)
