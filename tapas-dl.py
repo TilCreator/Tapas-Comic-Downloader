@@ -151,7 +151,7 @@ for urlCount, url in enumerate(args.url):
 
             pageData['imgs'] = []
             for img in pageHtml('.content__img'):
-                pageData['imgs'].append(pq(img).attr('src'))
+                pageData['imgs'].append(pq(img).attr('data-src'))
 
                 allImgCount += 1
 
