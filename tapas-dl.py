@@ -1,5 +1,6 @@
 #!/bin/env python3
 from pyquery import PyQuery as pq
+from pathlib import Path
 import os
 import argparse
 import re
@@ -51,9 +52,14 @@ parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
 parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
+parser.add_argument('-o', type=str, nargs='?', default="", dest='baseDir', metavar='C:\\',
+                    help='Output directory where comics should be placed.\nIf left blank, the script folder will be used.')
 
 args = parser.parse_args()
 
+basePath = ""
+if (args.baseDir):
+    basePath = Path(args.baseDir)
 
 for urlCount, url in enumerate(args.url):
     # check url/name
@@ -92,10 +98,15 @@ for urlCount, url in enumerate(args.url):
 
     # Check if folder exsists, if not create it
     printLine('Checking folder...', True)
-    if os.path.isdir('{} [{}]'.format(name, urlName)) and not args.force:
+    # If the user specified a base output directory, prepend that on our folder
+    savePath = '{} [{}]'.format(name, urlName)
+    if (basePath != ""):
+        savePath = basePath / savePath
+        printLine('Full path is: ' + str(savePath))
+    if os.path.isdir(savePath) and not args.force:
         printLine('Found directory, only updating (use -f/--force to disable)')
 
-        filesInDir = list(os.scandir('{} [{}]'.format(name, urlName)))
+        filesInDir = list(os.scandir(savePath))
 
         fileNames = []
         for fileInDir in filesInDir:
@@ -114,8 +125,8 @@ for urlCount, url in enumerate(args.url):
         else:
             pageOffset = 0
     else:
-        if not os.path.isdir('{} [{}]'.format(name, urlName)):
-            os.mkdir('{} [{}]'.format(name, urlName))
+        if not os.path.isdir(savePath):
+            os.mkdir(savePath)
             printLine('Creating folder...', True)
 
         # Download header
@@ -127,7 +138,7 @@ for urlCount, url in enumerate(args.url):
             headerSrc = None
 
         if headerSrc is not None:
-            with open(os.path.join(name + ' [' + urlName + ']', '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
+            with open(os.path.join(savePath, '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
                 f.write(requests.get(headerSrc).content)
 
             printLine('Downloaded header')
@@ -137,7 +148,7 @@ for urlCount, url in enumerate(args.url):
         pageOffset = 0
         imgOffset = 0
 
-    # Check if series is comic of novel
+    # Check if series is comic or novel
     if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
         printLine('Detected comic')
         # Get images from page from JS api
@@ -159,7 +170,7 @@ for urlCount, url in enumerate(args.url):
         imgCount = 0
         for pageCount, pageData in enumerate(data):
             for imgOfPageCount, img in enumerate(pageData['imgs']):
-                with open(os.path.join('{} [{}]'.format(name, urlName), check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
+                with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                                        lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
                                                                                                                        pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
                     f.write(requests.get(img).content)
@@ -192,7 +203,7 @@ for urlCount, url in enumerate(args.url):
 
         book.add_author(page('.tag__author').text())
 
-        header_name = os.path.join(f'{name} [{urlName}]', list(filter(re.compile(r'.+header\..+').match, os.listdir(f'{name} [{urlName}]')))[0])
+        header_name = os.path.join(savePath, list(filter(re.compile(r'.+header\..+').match, os.listdir(savePath)))[0])
         book.set_cover("cover.jpg", open(header_name, 'rb').read())
 
         book.toc = []
@@ -242,9 +253,9 @@ for urlCount, url in enumerate(args.url):
         book.add_item(nav_css)
 
         # write to the file
-        epub.write_epub(name + '.epub', book)
+        epub.write_epub(os.path.join(savePath, name, '.epub'), book)
 
         # remove tmp folder
-        for file in os.listdir(f'{name} [{urlName}]'):
-            os.remove(os.path.join(f'{name} [{urlName}]', file))
-        os.removedirs(f'{name} [{urlName}]')
+        for file in os.listdir(savePath):
+            os.remove(os.path.join(savePath, file))
+        os.removedirs(savePath)
