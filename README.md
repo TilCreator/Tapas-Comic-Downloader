@@ -46,7 +46,7 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
  * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`.
  * To get the verbose output use `-v/--verbose`.
- * To specify an base output path use `-o \desired\path` (If not specified, files and folders will be created where the script was run.)
+ * To specify an base output path use `-o/--output-dir \desired\path` (If not specified, files and folders will be created where the script was run.)
 
 ### Extra:
 If someone wants to quickly understand the code, here is the pseudo code of the pure download part:
