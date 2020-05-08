@@ -29,7 +29,7 @@ This is a downloader to download and update whole comics from https://tapas.io/.
       ```
    * Execute the script
       ```
-      python tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...]
+      python tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...] [-o \output\path\]
       ```
       More exact usage in the next section
    * (thx @ [ONSKJ](https://github.com/ONSKJ) for help with Windows)
@@ -41,11 +41,12 @@ This is a downloader to download and update whole comics from https://tapas.io/.
 3. Start the download
  * Usage of `tapas-dl.py`:
  ```
- $ tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...]
+ $ tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...] [-o \output\path\] 
  ```
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
  * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`.
  * To get the verbose output use `-v/--verbose`.
+ * To specify an base output path use `-o/--output-dir \desired\path` (If not specified, files and folders will be created where the script was run.)
 
 ### Extra:
 If someone wants to quickly understand the code, here is the pseudo code of the pure download part:
