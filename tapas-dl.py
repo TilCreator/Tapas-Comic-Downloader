@@ -52,7 +52,7 @@ parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
 parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
-parser.add_argument('-o', type=str, nargs='?', default="", dest='baseDir', metavar='C:\\',
+parser.add_argument('-o', '--output-dir', type=str, nargs='?', default="", dest='baseDir', metavar='C:\\',
                     help='Output directory where comics should be placed.\nIf left blank, the script folder will be used.')
 
 args = parser.parse_args()
