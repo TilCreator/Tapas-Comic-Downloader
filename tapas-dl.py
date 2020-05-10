@@ -149,16 +149,27 @@ for urlCount, url in enumerate(args.url):
         imgOffset = 0
 
     # Check if series is comic or novel
-    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
+    #if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
+    if True:
         printLine('Detected comic')
         # Get images from page from JS api
         allImgCount = 0
         for pageCount, pageData in enumerate(data):
             
-            # Try to parse the next comic page (This will fail with a 404 if the page is 'Early Access' only) See 'except' below
-            try:
-                pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
+            # Test whether the page we have in mind is reachable
+            pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'}) 
+            if pageReqest.status_code != 200: 
+                printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)\n'.format(urlName,pageCount + pageOffset, len(data) + pageOffset,str(pageReqest.status_code)), True)
                 
+                # We failed to get this page. Add a single dummy entry we can find later.
+                pageData['title'] = "Error 404"
+                pageData['imgs'] = []
+                pageData['imgs'].append("Error 404")
+                #allImgCount += 1
+                
+            else:
+                pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
+
                 printLine('Downloaded image data from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
 
                 pageData['title'] = pageHtml('.info__title').text()
@@ -168,18 +179,15 @@ for urlCount, url in enumerate(args.url):
                     pageData['imgs'].append(pq(img).attr('data-src'))
 
                     allImgCount += 1
-            except:
-                printLine('Unable to parse page {}/{})... (This page may be Early Access)'.format(pageCount + pageOffset, len(data) + pageOffset), True)
-                
-                
 
         # Download images
         imgCount = 0
         for pageCount, pageData in enumerate(data):
             
-            # Try to fetch the img data for this page (This will fail if it was skipped in the previous try/except block- possibly because the page is 'Early Access' only.)
-            try:
-                for imgOfPageCount, img in enumerate(pageData['imgs']):
+            for imgOfPageCount, img in enumerate(pageData['imgs']):
+                
+                if pageData['imgs'][0] != "Error 404":
+                
                     with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                                            lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
                                                                                                                            pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
@@ -188,8 +196,8 @@ for urlCount, url in enumerate(args.url):
                     imgCount += 1
 
                     printLine('Downloaded image {}/{} from page {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
-            except:
-                printLine('Unable to download page {}/{})... (This page may be Early Access)'.format(pageCount + pageOffset, len(data) + pageOffset), True)
+                else:
+                    printLine('Error: No images available on page {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
 
         if data != []:
             printLine('Downloaded {} images'.format(allImgCount))
