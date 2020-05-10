@@ -149,8 +149,7 @@ for urlCount, url in enumerate(args.url):
         imgOffset = 0
 
     # Check if series is comic or novel
-    #if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
-    if True:
+    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
         printLine('Detected comic')
         # Get images from page from JS api
         allImgCount = 0
