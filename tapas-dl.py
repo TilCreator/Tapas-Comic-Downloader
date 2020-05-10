@@ -159,13 +159,12 @@ for urlCount, url in enumerate(args.url):
             # Test whether the page we have in mind is reachable
             pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'}) 
             if pageReqest.status_code != 200: 
-                printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)\n'.format(urlName,pageCount + pageOffset, len(data) + pageOffset,str(pageReqest.status_code)), True)
+                printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)'.format(urlName,pageCount + pageOffset, len(data) + pageOffset,str(pageReqest.status_code)), True)
                 
                 # We failed to get this page. Add a single dummy entry we can find later.
-                pageData['title'] = "Error 404"
+                pageData['title'] = "PageUnavailable"
                 pageData['imgs'] = []
-                pageData['imgs'].append("Error 404")
-                #allImgCount += 1
+                pageData['imgs'].append("PageUnavailable")
                 
             else:
                 pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
@@ -186,7 +185,8 @@ for urlCount, url in enumerate(args.url):
             
             for imgOfPageCount, img in enumerate(pageData['imgs']):
                 
-                if pageData['imgs'][0] != "Error 404":
+                # Download all the images for this page (if the first entry is not "PageUnavailable", indicating the page was unavailable when scraped for images).
+                if pageData['imgs'][0] != "PageUnavailable":
                 
                     with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                                            lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
