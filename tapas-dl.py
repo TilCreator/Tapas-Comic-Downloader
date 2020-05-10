@@ -158,15 +158,17 @@ for urlCount, url in enumerate(args.url):
             
             # Test whether the page we have in mind is reachable
             pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'}) 
-            if pageReqest.status_code != 200: 
+            if pageReqest.status_code != 200:
+                # This page was unavailable. Let the user know and add a single dummy image entry.
+                # (We will check for this when we go to download images.)
                 printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)'.format(urlName,pageCount + pageOffset, len(data) + pageOffset,str(pageReqest.status_code)), True)
                 
-                # We failed to get this page. Add a single dummy entry we can find later.
                 pageData['title'] = "PageUnavailable"
                 pageData['imgs'] = []
                 pageData['imgs'].append("PageUnavailable")
                 
             else:
+                # If the page did not yield an access error, go ahead an scrape for image entries.
                 pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
 
                 printLine('Downloaded image data from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
@@ -185,9 +187,9 @@ for urlCount, url in enumerate(args.url):
             
             for imgOfPageCount, img in enumerate(pageData['imgs']):
                 
-                # Download all the images for this page (if the first entry is not "PageUnavailable", indicating the page was unavailable when scraped for images).
+                # Check if the first image entry is the fummy text that indicates the page was unavailable when we tried to scrape it.
                 if pageData['imgs'][0] != "PageUnavailable":
-                
+                    # If the entry isn't a dummy entry, go ahead and download the images it contains.
                     with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                                            lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
                                                                                                                            pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
@@ -197,7 +199,8 @@ for urlCount, url in enumerate(args.url):
 
                     printLine('Downloaded image {}/{} from page {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
                 else:
-                    printLine('Error: No images available on page {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
+                    # If the entry was a dummy entry, skip it and let the user know.
+                    printLine('Error: No images downloaded from page {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
 
         if data != []:
             printLine('Downloaded {} of {} images'.format(imgCount, allImgCount))
