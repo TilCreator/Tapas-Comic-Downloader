@@ -200,7 +200,7 @@ for urlCount, url in enumerate(args.url):
                     printLine('Error: No images available on page {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
 
         if data != []:
-            printLine('Downloaded {} images'.format(allImgCount))
+            printLine('Downloaded {} of {} images'.format(imgCount, allImgCount))
         else:
             printLine('Nothing to do')
 
