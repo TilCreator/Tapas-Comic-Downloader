@@ -79,20 +79,22 @@ for urlCount, url in enumerate(args.url):
 
     page = pq(pageReqest.text)
 
-    try:
-        page_count = int(page('.paging .paging__button.paging__button--num.g-act')[-1].text)
-    except IndexError:
-        page_count = 1
+    name = page('.center-info__title.center-info__title--small').text()
 
-    name = page('.desc__title').text()
+    author = page('div.viewer-section.viewer-section--episode a.name').text()
+
+    seriesId = page('.subscribe-btn').attr('data-id')
+
+    if len(page('.row-item--info > img')) > 0:
+        headerSrc = page('.row-item--info > img').attr('src')
+    else:
+        headerSrc = None
 
     data = []
-    for i in range(page_count):
-        page = pq(url=f'https://tapas.io/series/{urlName}?pageNumber={i + 1}&sort_order=asc', headers={'user-agent': 'tapas-dl'})
-        for episode in page('.content a[href*="/episode/"]'):
-            data.append({'id': int(episode.attrib['href'][episode.attrib['href'].rfind('/') + 1:])})
-
-        printLine(f'Crawling {i+1}/{page_count}...', True)
+    page = pq(requests.get(f'https://tapas.io/series/{seriesId}/episodes?page=1&sort=OLDEST&max_limit=99999999',  # It's over 9000! But I love that they forgot to limit the max_limit, because that means I don't have to bother with pagination ^^
+                           headers={'user-agent': 'tapas-dl'}).json()['data']['body'])
+    for episode in page('[data-permalink*="/episode/"]'):
+        data.append({'id': int(episode.attrib['data-permalink'][episode.attrib['data-permalink'].rfind('/') + 1:])})
 
     printLine('{} [{}] ({} pages):'.format(name, urlName, len(data)))
 
@@ -101,7 +103,7 @@ for urlCount, url in enumerate(args.url):
     # If the user specified a base output directory, prepend that on our folder
     savePath = '{} [{}]'.format(name, urlName)
     if (basePath != ""):
-        savePath = basePath / savePath
+        savePath = os.path.join(basePath, savePath)
         printLine('Full path is: ' + str(savePath))
     if os.path.isdir(savePath) and not args.force:
         printLine('Found directory, only updating (use -f/--force to disable)')
@@ -129,13 +131,12 @@ for urlCount, url in enumerate(args.url):
             os.mkdir(savePath)
             printLine('Creating folder...', True)
 
-        # Download header
-        printLine('Downloading header...', True)
+        pageOffset = 0
+        imgOffset = 0
 
-        if len(page('.header__thumb img')) > 0:
-            headerSrc = page('.header__thumb img').attr('src')
-        else:
-            headerSrc = None
+    # Download header
+    if True not in [file.starts_with('-1 - header.') for file in os.scandir(savePath)]:
+        printLine('Downloading header...', True)
 
         if headerSrc is not None:
             with open(os.path.join(savePath, '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
@@ -145,27 +146,24 @@ for urlCount, url in enumerate(args.url):
         else:
             printLine('Header not found')
 
-        pageOffset = 0
-        imgOffset = 0
-
     # Check if series is comic or novel
-    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.ep-epub-contents')) > 0:
+    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.content__img.js-lazy')) > 0:
         printLine('Detected comic')
         # Get images from page from JS api
         allImgCount = 0
         for pageCount, pageData in enumerate(data):
-            
+
             # Test whether the page we have in mind is reachable
-            pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'}) 
+            pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
             if pageReqest.status_code != 200:
                 # This page was unavailable. Let the user know and add a single dummy image entry.
                 # (We will check for this when we go to download images.)
-                printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)'.format(urlName,pageCount + pageOffset, len(data) + pageOffset,str(pageReqest.status_code)), True)
-                
+                printLine('Error: "{}" page {}/{} not found. Page Request yielded: {} (Early Access page?)'.format(urlName, pageCount + pageOffset, len(data) + pageOffset, str(pageReqest.status_code)), True)
+
                 pageData['title'] = "PageUnavailable"
                 pageData['imgs'] = []
                 pageData['imgs'].append("PageUnavailable")
-                
+
             else:
                 # If the page did not yield an access error, go ahead an scrape for image entries.
                 pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
@@ -183,15 +181,15 @@ for urlCount, url in enumerate(args.url):
         # Download images
         imgCount = 0
         for pageCount, pageData in enumerate(data):
-            
+
             for imgOfPageCount, img in enumerate(pageData['imgs']):
-                
+
                 # Check if the first image entry is the fummy text that indicates the page was unavailable when we tried to scrape it.
                 if pageData['imgs'][0] != "PageUnavailable":
                     # If the entry isn't a dummy entry, go ahead and download the images it contains.
                     with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
-                                                                                                                           lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'],
-                                                                                                                           pageData['id'], img[img.rindex('.') + 1:]), fat=args.restrict_characters)), 'wb') as f:
+                                                                                                    lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'], pageData['id'], img[img.rindex('.') + 1:]),
+                                                                fat=args.restrict_characters)), 'wb') as f:
                         f.write(requests.get(img).content)
 
                     imgCount += 1
@@ -220,10 +218,10 @@ for urlCount, url in enumerate(args.url):
 
         # Add meta data
         book.set_identifier(urlName)
-        book.set_title(page('.series-header-title').text())
+        book.set_title(name)
         book.set_language('en')
 
-        book.add_author(page('.tag__author').text())
+        book.add_author(author)
 
         header_name = os.path.join(savePath, list(filter(re.compile(r'.+header\..+').match, os.listdir(savePath)))[0])
         book.set_cover("cover.jpg", open(header_name, 'rb').read())
@@ -243,13 +241,13 @@ for urlCount, url in enumerate(args.url):
 
         # create chapters
         for pageCount, pageData in enumerate(data):
-            printLine('Downloaded page {}/{}...'.format(pageCount, len(data)), True)
+            printLine('Downloaded page {}/{}...'.format(pageCount + 1, len(data)), True)
 
             pagePq = pq(url='https://tapas.io/episode/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'})
-            pageTitle = pagePq('.main__title').text()
+            pageTitle = pagePq('.viewer__header > .title').text()
 
             pageHtml = f'<h1>{pageTitle}</h1>'
-            for p in pagePq('article.main__body > p'):
+            for p in pagePq('article.viewer__body > p'):
                 p = pq(p)
                 if p.text() is not None:
                     pageHtml += '<p>' + p.text() + '</p>'
@@ -275,7 +273,7 @@ for urlCount, url in enumerate(args.url):
         book.add_item(nav_css)
 
         # write to the file
-        epub.write_epub(os.path.join(savePath, name, '.epub'), book)
+        epub.write_epub(os.path.join('/'.join(savePath.split('/')[:-1]), check_path(f'{name}.epub', fat=args.restrict_characters)), book)
 
         # remove tmp folder
         for file in os.listdir(savePath):
