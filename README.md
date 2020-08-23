@@ -41,16 +41,30 @@ This is a downloader to download and update whole comics from https://tapas.io/.
 3. Start the download
  * Usage of `tapas-dl.py`:
  ```
- $ tapas-dl.py [-h/--help] [-f/--force] [-v/--verbose] URL/name [URL/name ...] [-o \output\path\] 
+ $ ./tapas-dl.py -h
+usage: tapas-dl.py [-h] [-f] [-v] [-c] [-o [C:\]] URL/name [URL/name ...]
+
+Downloads Comics from 'https://tapas.io'.
+If folder of downloaded comic is found, it will only update (can be disabled with -f/--force).
+
+positional arguments:
+  URL/name              URL or URL name to comic
+                        Go to the comic you want to download (any page)
+                        Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url
+                        Examples: https://tapas.io/series/Erma, RavenWolf, ...
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -f, --force           Disables updater.
+  -v, --verbose         Enables verbose mode.
+  -c, --restrict-characters
+                        Removes '? < > \ : * | " ^' from file names
+  -o [C:\], --output-dir [C:\]
+                        Output directory where comics should be placed.
+                        If left blank, the script folder will be used.
  ```
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
  * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`.
  * To get the verbose output use `-v/--verbose`.
  * To specify an base output path use `-o/--output-dir \desired\path` (If not specified, files and folders will be created where the script was run.)
-
-### Extra:
-If someone wants to quickly understand the code, here is the pseudo code of the pure download part:
-1. Get comic start page (Example: `https://tapas.io/series/Erma`)
-2. Extract all pageIds of the comic from the `_data` JS object from the start page
-3. Get image urls by extracting them out of `https://tapas.io/episode/view/<pageId>` (Example: `https://tapas.io/episode/view/255222`)
-4. Download the images
+ * On some file systems (expecialy Windows ones) some characters are unsupportet, if you run into problems with that use the -c, --restrict-characters option
