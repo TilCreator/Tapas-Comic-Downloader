@@ -135,7 +135,7 @@ for urlCount, url in enumerate(args.url):
         imgOffset = 0
 
     # Download header
-    if True not in [file.starts_with('-1 - header.') for file in os.scandir(savePath)]:
+    if True not in [file.name.startswith('-1 - header.') for file in os.scandir(savePath)]:
         printLine('Downloading header...', True)
 
         if headerSrc is not None:
