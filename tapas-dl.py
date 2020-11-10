@@ -146,6 +146,10 @@ for urlCount, url in enumerate(args.url):
         else:
             printLine('Header not found')
 
+    if len(data) <= 0:
+        print('Nothing todo: No pages found or all already downloaded\n')
+        continue
+
     # Check if series is comic or novel
     if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.content__img.js-lazy')) > 0:
         printLine('Detected comic')
