@@ -101,7 +101,7 @@ for urlCount, url in enumerate(args.url):
     # Check if folder exsists, if not create it
     printLine('Checking folder...', True)
     # If the user specified a base output directory, prepend that on our folder
-    savePath = '{} [{}]'.format(name, urlName)
+    savePath = check_path('{} [{}]'.format(name, urlName), fat=args.restrict_characters)
     if (basePath != ""):
         savePath = os.path.join(basePath, savePath)
         printLine('Full path is: ' + str(savePath))
