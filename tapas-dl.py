@@ -5,6 +5,7 @@ import os
 import argparse
 import re
 import requests
+import http.cookiejar
 
 
 def lead0(num, max):
@@ -51,11 +52,21 @@ parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
                     help='URL or URL name to comic\nGo to the comic you want to download (any page)\nRightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url\nExamples: https://tapas.io/series/Erma, RavenWolf, ...')
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
-parser.add_argument('-c', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
-parser.add_argument('-o', '--output-dir', type=str, nargs='?', default="", dest='baseDir', metavar='C:\\',
+parser.add_argument('-r', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
+parser.add_argument('-c', '--cookies', type=str, nargs='?', default="", dest='cookies', metavar='PATH',
+                    help='Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.')
+parser.add_argument('-o', '--output-dir', type=str, nargs='?', default="", dest='baseDir', metavar='PATH',
                     help='Output directory where comics should be placed.\nIf left blank, the script folder will be used.')
 
 args = parser.parse_args()
+
+s = requests.Session()
+s.headers.update({'user-agent': 'tapas-dl'})
+if args.cookies:
+    s.cookies = http.cookiejar.MozillaCookieJar()
+    s.cookies.load(args.cookies, ignore_discard=True, ignore_expires=True)
+s.cookies.update({'birthDate': '1901-01-01'})
+s.cookies.update({'adjustedBirthDate': '1901-01-01'})
 
 basePath = ""
 if (args.baseDir):
@@ -71,7 +82,7 @@ for urlCount, url in enumerate(args.url):
     printLine('Loading ' + urlName + '...', True)
 
     # Get comic start page and test if comic exsists
-    pageReqest = requests.get('https://tapas.io/series/' + urlName, headers={'user-agent': 'tapas-dl'})
+    pageReqest = s.get('https://tapas.io/series/' + urlName)
 
     if pageReqest.status_code != 200:
         printLine('Error: Comic "{}" not found\n'.format(urlName))
@@ -91,8 +102,8 @@ for urlCount, url in enumerate(args.url):
         headerSrc = None
 
     data = []
-    page = pq(requests.get(f'https://tapas.io/series/{seriesId}/episodes?page=1&sort=OLDEST&max_limit=99999999',  # It's over 9000! But I love that they forgot to limit the max_limit, because that means I don't have to bother with pagination ^^
-                           headers={'user-agent': 'tapas-dl'}).json()['data']['body'])
+    page = pq(s.get(f'https://tapas.io/series/{seriesId}/episodes?page=1&sort=OLDEST&max_limit=99999999')  # It's over 9000! But I love that they forgot to limit the max_limit, because that means I don't have to bother with pagination ^^
+              .json()['data']['body'])
     for episode in page('[data-permalink*="/episode/"]'):
         data.append({'id': int(episode.attrib['data-permalink'][episode.attrib['data-permalink'].rfind('/') + 1:])})
 
@@ -140,7 +151,7 @@ for urlCount, url in enumerate(args.url):
 
         if headerSrc is not None:
             with open(os.path.join(savePath, '-1 - header.{}'.format(headerSrc[headerSrc.rindex('.') + 1:])), 'wb') as f:
-                f.write(requests.get(headerSrc).content)
+                f.write(s.get(headerSrc).content)
 
             printLine('Downloaded header')
         else:
@@ -151,14 +162,14 @@ for urlCount, url in enumerate(args.url):
         continue
 
     # Check if series is comic or novel
-    if len(pq(f'https://tapas.io/episode/{data[0]["id"]}', headers={'user-agent': 'tapas-dl'})('.content__img.js-lazy')) > 0:
+    if len(pq(s.get(f'https://tapas.io/episode/{data[0]["id"]}').content)('.content__img.js-lazy')) > 0:
         printLine('Detected comic')
         # Get images from page from JS api
         allImgCount = 0
         for pageCount, pageData in enumerate(data):
 
             # Test whether the page we have in mind is reachable
-            pageReqest = requests.get(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
+            pageReqest = s.get(f'https://tapas.io/episode/{pageData["id"]}')
             if pageReqest.status_code != 200:
                 # This page was unavailable. Let the user know and add a single dummy image entry.
                 # (We will check for this when we go to download images.)
@@ -170,7 +181,7 @@ for urlCount, url in enumerate(args.url):
 
             else:
                 # If the page did not yield an access error, go ahead an scrape for image entries.
-                pageHtml = pq(f'https://tapas.io/episode/{pageData["id"]}', headers={'user-agent': 'tapas-dl'})
+                pageHtml = pq(s.get(f'https://tapas.io/episode/{pageData["id"]}').content)
 
                 printLine('Downloaded image data from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
 
@@ -194,7 +205,7 @@ for urlCount, url in enumerate(args.url):
                     with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                     lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'], pageData['id'], img[img.rindex('.') + 1:]),
                                                                 fat=args.restrict_characters)), 'wb') as f:
-                        f.write(requests.get(img).content)
+                        f.write(s.get(img).content)
 
                     imgCount += 1
 
@@ -247,7 +258,7 @@ for urlCount, url in enumerate(args.url):
         for pageCount, pageData in enumerate(data):
             printLine('Downloaded page {}/{}...'.format(pageCount + 1, len(data)), True)
 
-            pagePq = pq(url='https://tapas.io/episode/' + str(pageData['id']), headers={'user-agent': 'tapas-dl'})
+            pagePq = pq(s.get(f'https://tapas.io/episode/{pageData["id"]}').content)
             pageTitle = pagePq('.viewer__header > .title').text()
 
             pageHtml = f'<h1>{pageTitle}</h1>'

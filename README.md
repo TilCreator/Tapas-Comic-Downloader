@@ -42,26 +42,29 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  * Usage of `tapas-dl.py`:
  ```
  $ ./tapas-dl.py -h
-usage: tapas-dl.py [-h] [-f] [-v] [-c] [-o [C:\]] URL/name [URL/name ...]
-
-Downloads Comics from 'https://tapas.io'.
-If folder of downloaded comic is found, it will only update (can be disabled with -f/--force).
-
-positional arguments:
-  URL/name              URL or URL name to comic
-                        Go to the comic you want to download (any page)
-                        Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url
-                        Examples: https://tapas.io/series/Erma, RavenWolf, ...
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -f, --force           Disables updater.
-  -v, --verbose         Enables verbose mode.
-  -c, --restrict-characters
-                        Removes '? < > \ : * | " ^' from file names
-  -o [C:\], --output-dir [C:\]
-                        Output directory where comics should be placed.
-                        If left blank, the script folder will be used.
+ usage: tapas-dl.py [-h] [-f] [-v] [-r] [-c [PATH]] [-o [PATH]]
+                    URL/name [URL/name ...]
+ 
+ Downloads Comics from 'https://tapas.io'.
+ If folder of downloaded comic is found, it will only update (can be disabled with -f/--force).
+ 
+ positional arguments:
+   URL/name              URL or URL name to comic
+                         Go to the comic you want to download (any page)
+                         Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url
+                         Examples: https://tapas.io/series/Erma, RavenWolf, ...
+ 
+ optional arguments:
+   -h, --help            show this help message and exit
+   -f, --force           Disables updater.
+   -v, --verbose         Enables verbose mode.
+   -r, --restrict-characters
+                         Removes '? < > \ : * | " ^' from file names
+   -c [PATH], --cookies [PATH]
+                         Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.
+   -o [PATH], --output-dir [PATH]
+                         Output directory where comics should be placed.
+                         If left blank, the script folder will be used. 
  ```
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
  * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`.
