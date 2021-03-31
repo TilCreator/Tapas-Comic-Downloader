@@ -288,7 +288,7 @@ for urlCount, url in enumerate(args.url):
         book.add_item(nav_css)
 
         # write to the file
-        epub.write_epub(os.path.join('/'.join(savePath.split('/')[:-1]), check_path(f'{name}.epub', fat=args.restrict_characters)), book)
+        epub.write_epub(os.path.join(os.path.dirname(savePath), check_path(f'{name}.epub', fat=args.restrict_characters)), book)
 
         # remove tmp folder
         for file in os.listdir(savePath):
