@@ -57,6 +57,8 @@ parser.add_argument('-c', '--cookies', type=str, nargs='?', default="", dest='co
                     help='Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.')
 parser.add_argument('-o', '--output-dir', type=str, nargs='?', default="", dest='baseDir', metavar='PATH',
                     help='Output directory where comics should be placed.\nIf left blank, the script folder will be used.')
+parser.add_argument('-s', '--selection', type=int, nargs=2, default=[0,99999999], dest='episodeRange', metavar='NUM',
+                    help='Select episodes (aka pages) by ID to download.\n-s 2191740 2191740 will download only that episode.\n-s 136372 2191740 will download all episodes between that range.')
 
 args = parser.parse_args()
 
@@ -71,6 +73,10 @@ s.cookies.update({'adjustedBirthDate': '1901-01-01'})
 basePath = ""
 if (args.baseDir):
     basePath = Path(args.baseDir)
+
+episodeRange=[0,99999999]
+if args.episodeRange:
+    episodeRange=args.episodeRange
 
 for urlCount, url in enumerate(args.url):
     # check url/name
@@ -105,7 +111,9 @@ for urlCount, url in enumerate(args.url):
     page = pq(s.get(f'https://tapas.io/series/{seriesId}/episodes?page=1&sort=OLDEST&max_limit=99999999')  # It's over 9000! But I love that they forgot to limit the max_limit, because that means I don't have to bother with pagination ^^
               .json()['data']['body'])
     for episode in page('[data-permalink*="/episode/"]'):
-        data.append({'id': int(episode.attrib['data-permalink'][episode.attrib['data-permalink'].rfind('/') + 1:])})
+        tempID = int(episode.attrib['data-permalink'][episode.attrib['data-permalink'].rfind('/') + 1:])
+        if tempID >= episodeRange[0] and tempID <= episodeRange[1]:
+            data.append({'id': tempID})
 
     printLine('{} [{}] ({} pages):'.format(name, urlName, len(data)))
 
@@ -181,11 +189,11 @@ for urlCount, url in enumerate(args.url):
 
             else:
                 # If the page did not yield an access error, go ahead an scrape for image entries.
-                pageHtml = pq(s.get(f'https://tapas.io/episode/{pageData["id"]}').content)
+                pageHtml = pq(pageReqest.content)
 
-                printLine('Downloaded image data from {} images (pages {}/{})...'.format(allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
+                pageData['title'] = pageHtml('.center-info__title.js-ep-title').text()
 
-                pageData['title'] = pageHtml('.info__title').text()
+                printLine('Downloaded image data from {}, {} images (pages {}/{})...'.format(pageData['title'], allImgCount, pageCount + pageOffset, len(data) + pageOffset), True)
 
                 pageData['imgs'] = []
                 for img in pageHtml('.content__img'):
