@@ -35,9 +35,10 @@ This is a downloader to download and update whole comics from https://tapas.io/.
    * (thx @ [ONSKJ](https://github.com/ONSKJ) for help with Windows)
  + If someone got it running on another OS, please let me know!
 2. Get input link
- * Go to the comic you want to download (any page)
+ * Go to the comic you want to download (any episode)
  * Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url.
  * Examples: `https://tapas.io/series/Erma`, `RavenWolf`, ...
+ * Optional - get the episode ID(s). eg 255222 for `https://tapas.io/episode/255222` (the first episode of Erma).
 3. Start the download
  * Usage of `tapas-dl.py`:
  ```
@@ -50,24 +51,32 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  
  positional arguments:
    URL/name              URL or URL name to comic
-                         Go to the comic you want to download (any page)
+                         Go to the comic you want to download (any episode)
                          Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url
                          Examples: https://tapas.io/series/Erma, RavenWolf, ...
  
  optional arguments:
-   -h, --help            show this help message and exit
-   -f, --force           Disables updater.
-   -v, --verbose         Enables verbose mode.
-   -r, --restrict-characters
-                         Removes '? < > \ : * | " ^' from file names
-   -c [PATH], --cookies [PATH]
-                         Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.
-   -o [PATH], --output-dir [PATH]
-                         Output directory where comics should be placed.
-                         If left blank, the script folder will be used. 
+    -h, --help            show this help message and exit
+    -f, --force           Disables updater.
+    -v, --verbose         Enables verbose mode.
+    -r, --restrict-characters
+                          Removes '? < > \ : * | " ^' from file names
+    -n, --organize        Organizes episodes into individual folders for comics.
+                          Currently incompatible with update mode, use selection instead.
+    -c [PATH], --cookies [PATH]
+                          Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.
+    -o [PATH], --output-dir [PATH]
+                          Output directory where comics should be placed.
+                          If left blank, the script folder will be used.
+    -s NUM NUM, --selection NUM NUM
+                          Select episodes (aka pages) inclusively by ID to download.
+                          -s 2191740 2191740 will download only that episode.
+                          -s 136372 2191740 will download all episodes between that range.
  ```
  * The script will create an folder with the name and urlName (`name [urlName]`) of the comic in the current shell location (like git) and download all images of the comic into it.
- * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`.
+ * If the script finds an folder with the name of the comic, it will only update, this can be disabled with `-f/--force`. 
  * To get the verbose output use `-v/--verbose`.
+ * To move images into folders by episode use `-n/--organize`. Currently incompatible with updating, (delete and) use selection instead.
+ * To select the range of episodes to download, use `-s/--selection beginID endID`. Find the IDs by going into the episode and copying the number at the end of the URL.
  * To specify an base output path use `-o/--output-dir \desired\path` (If not specified, files and folders will be created where the script was run.)
- * On some file systems (expecialy Windows ones) some characters are unsupportet, if you run into problems with that use the -c, --restrict-characters option
+ * On some file systems (expecialy Windows ones) some characters are unsupported, if you run into problems with that use the -c, --restrict-characters option
