@@ -49,10 +49,11 @@ def check_path(path, slash=True, fat=False):
 # parse input and settup help
 parser = argparse.ArgumentParser(description='Downloads Comics from \'https://tapas.io\'.\nIf folder of downloaded comic is found, it will only update (can be disabled with -f/--force).', formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('url', metavar='URL/name', type=str, nargs='+',
-                    help='URL or URL name to comic\nGo to the comic you want to download (any page)\nRightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url\nExamples: https://tapas.io/series/Erma, RavenWolf, ...')
+                    help='URL or URL name to comic\nGo to the comic you want to download (any episode)\nRightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url\nExamples: https://tapas.io/series/Erma, RavenWolf, ...')
 parser.add_argument('-f', '--force', action="store_true", help='Disables updater.')
 parser.add_argument('-v', '--verbose', action="store_true", help='Enables verbose mode.')
 parser.add_argument('-r', '--restrict-characters', action="store_true", help='Removes \'? < > \\ : * | " ^\' from file names')
+parser.add_argument('-n', '--organize', action="store_true", help='Organizes episodes into individual folders for comics. \nCurrently incompatible with update mode, use selection instead.')
 parser.add_argument('-c', '--cookies', type=str, nargs='?', default="", dest='cookies', metavar='PATH',
                     help='Optional cookies.txt file to load, can be used to allow the script to "log in" and circumvent age verification.')
 parser.add_argument('-o', '--output-dir', type=str, nargs='?', default="", dest='baseDir', metavar='PATH',
@@ -115,7 +116,7 @@ for urlCount, url in enumerate(args.url):
         if tempID >= episodeRange[0] and tempID <= episodeRange[1]:
             data.append({'id': tempID})
 
-    printLine('{} [{}] ({} pages):'.format(name, urlName, len(data)))
+    printLine('{} [{}] ({} episodes)'.format(name, urlName, len(data)))
 
     # Check if folder exsists, if not create it
     printLine('Checking folder...', True)
@@ -125,16 +126,20 @@ for urlCount, url in enumerate(args.url):
         savePath = os.path.join(basePath, savePath)
         printLine('Full path is: ' + str(savePath))
     if os.path.isdir(savePath) and not args.force:
-        printLine('Found directory, only updating (use -f/--force to disable)')
+        if not args.organize:
+            printLine('Found directory, only updating (use -f/--force to disable)')
 
-        filesInDir = list(os.scandir(savePath))
+            filesInDir = list(os.scandir(savePath))
 
-        fileNames = []
-        for fileInDir in filesInDir:
-            fileNames.append(fileInDir.name)
-        fileNames.sort()
+            fileNames = []
+            for fileInDir in filesInDir:
+                fileNames.append(fileInDir.name)
+            fileNames.sort()
 
-        imgOffset = len(fileNames)
+            imgOffset = len(fileNames)
+        else:
+            printLine('\nWarning!!! Organize mode is incompatible with updates to episode folders.')
+            imgOffset = 0
 
         if imgOffset > 1:
             lastFile = fileNames[-1]
@@ -175,6 +180,8 @@ for urlCount, url in enumerate(args.url):
         # Get images from page from JS api
         allImgCount = 0
         for pageCount, pageData in enumerate(data):
+            # This is a hack, idk why it's suddenly off by 1
+            pageCount+=1
 
             # Test whether the page we have in mind is reachable
             pageReqest = s.get(f'https://tapas.io/episode/{pageData["id"]}')
@@ -204,23 +211,30 @@ for urlCount, url in enumerate(args.url):
         # Download images
         imgCount = 0
         for pageCount, pageData in enumerate(data):
+            # This is a hack, idk why it's suddenly off by 1
+            pageCount+=1
+            if args.organize:
+                episodePath = os.path.join(savePath, check_path('{} [{}]'.format(pageData['id'], pageData['title']), fat=args.restrict_characters))
+                os.mkdir(episodePath)
+            else:
+                episodePath = savePath
 
             for imgOfPageCount, img in enumerate(pageData['imgs']):
 
                 # Check if the first image entry is the fummy text that indicates the page was unavailable when we tried to scrape it.
                 if pageData['imgs'][0] != "PageUnavailable":
                     # If the entry isn't a dummy entry, go ahead and download the images it contains.
-                    with open(os.path.join(savePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
+                    with open(os.path.join(episodePath, check_path('{} - {} - {} - {} - #{}.{}'.format(lead0(imgCount + imgOffset, allImgCount + imgOffset), lead0(pageCount + pageOffset, len(pageData) + pageOffset),
                                                                                                     lead0(imgOfPageCount, len(pageData['imgs'])), pageData['title'], pageData['id'], img[img.rindex('.') + 1:]),
                                                                 fat=args.restrict_characters)), 'wb') as f:
                         f.write(s.get(img).content)
 
                     imgCount += 1
 
-                    printLine('Downloaded image {}/{} from page {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
+                    printLine('Downloaded image {}/{} from episode {}/{} ({}/{} images)...'.format(imgOfPageCount + 1, len(pageData['imgs']), pageCount + pageOffset, len(data) + pageOffset, imgCount + imgOffset, allImgCount + imgOffset), True)
                 else:
                     # If the entry was a dummy entry, skip it and let the user know.
-                    printLine('Error: No images downloaded from page {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
+                    printLine('Error: No images downloaded from episode {}/{}.'.format(pageCount + pageOffset, len(data) + pageOffset), True)
 
         if data != []:
             printLine('Downloaded {} of {} images'.format(imgCount, allImgCount))
@@ -229,6 +243,16 @@ for urlCount, url in enumerate(args.url):
 
         if urlCount + 1 != len(args.url):
             printLine()
+
+
+
+
+
+#####################################################################################################
+
+
+
+
     else:
         printLine('Detected novel')
 
