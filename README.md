@@ -5,20 +5,22 @@ This is a downloader to download and update whole comics from https://tapas.io/.
 **This script could be illegal in certain cases, please first read the terms of service on https://tapas.io/ !**
 
 ## Usage:
-1. Installing Python3 and needed modules:
+1. Installing python3 and needed modules:
  * Can be installed on Debian and Ubuntu and other Linux distribution that use 'apt' like this:
  ```
+ # git clone https://github.com/TilCreator/Tapas-Comic-Downloader && cd Tapas-Comic-Downloader
  # apt install python3 python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev
  # pip3 install -r requirenments.txt
  # pip3 install -r requirenments_novels.txt  # If novels are expected to be downloaded
  ```
  * On Arch/Antergos:
  ```
+ # git clone https://github.com/TilCreator/Tapas-Comic-Downloader && cd Tapas-Comic-Downloader
  # pacman -S python python-pip
  # pip install -r requirenments.txt
  # pip install -r requirenments_novels.txt  # If novels are expected to be downloaded
  ```
- * On Wndows
+ * On Windows:
    * Install python from python.org
    * Open cmd
    * Navigate to repo location (needs to be downloaded)
@@ -36,7 +38,7 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  + If someone got it running on another OS, please let me know!
 2. Get input link
  * Go to the comic you want to download (any page)
- * Rightclick on the comic name in the upper left corner and select "Copy linkaddress" (Or similar) or just use the name behind series in the url.
+ * Click on the comic name or thumbnail in the upper right corner to get the download URL or just use the name behind series in the url.
  * Examples: `https://tapas.io/series/Erma`, `RavenWolf`, ...
 3. Start the download
  * Usage of `tapas-dl.py`:
