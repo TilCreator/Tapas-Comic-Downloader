@@ -11,14 +11,14 @@ This is a downloader to download and update whole comics from https://tapas.io/.
  # git clone https://github.com/TilCreator/Tapas-Comic-Downloader && cd Tapas-Comic-Downloader
  # apt install python3 python3-dev python3-pip libxml2-dev libxslt1-dev zlib1g-dev
  # pip3 install -r requirenments.txt
- # pip3 install -r requirenments_novels.txt  # If novels are expected to be downloaded
+ # pip3 install -r requirenments_novel.txt  # If novels are expected to be downloaded
  ```
  * On Arch/Antergos:
  ```
  # git clone https://github.com/TilCreator/Tapas-Comic-Downloader && cd Tapas-Comic-Downloader
  # pacman -S python python-pip
  # pip install -r requirenments.txt
- # pip install -r requirenments_novels.txt  # If novels are expected to be downloaded
+ # pip install -r requirenments_novel.txt  # If novels are expected to be downloaded
  ```
  * On Windows:
    * Install python from python.org
@@ -27,7 +27,7 @@ This is a downloader to download and update whole comics from https://tapas.io/.
    * Install needed modules:
       ```
       pip install -r requirenments.txt
-      pip install -r requirenments_novels.txt  # If novels are expected to be downloaded
+      pip install -r requirenments_novel.txt  # If novels are expected to be downloaded
       ```
    * Execute the script
       ```
