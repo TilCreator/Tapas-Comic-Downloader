@@ -263,7 +263,7 @@ for urlCount, url in enumerate(args.url):
             pageTitle = pagePq('.viewer__header > .title').text()
 
             pageHtml = f'<h1>{pageTitle}</h1>'
-            for p in pagePq('article.viewer__body > div.ep-epub-content > div.body > p'):
+            for p in pagePq('article.viewer__body > div.ep-epub-content p'):
                 p = pq(p)
                 if p.text() is not None:
                     pageHtml += '<p>' + p.text() + '</p>'
