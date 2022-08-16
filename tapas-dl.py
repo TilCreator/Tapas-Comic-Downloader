@@ -65,8 +65,9 @@ s.headers.update({'user-agent': 'tapas-dl'})
 if args.cookies:
     s.cookies = http.cookiejar.MozillaCookieJar()
     s.cookies.load(args.cookies, ignore_discard=True, ignore_expires=True)
-s.cookies.update({'birthDate': '1901-01-01'})
-s.cookies.update({'adjustedBirthDate': '1901-01-01'})
+# FIXME Those cookies should be set, but no idea how...
+#s.cookies.update({'birthDate': '1901-01-01'})
+#s.cookies.update({'adjustedBirthDate': '1901-01-01'})
 
 basePath = ""
 if (args.baseDir):
